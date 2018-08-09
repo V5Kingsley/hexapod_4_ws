@@ -1,9 +1,9 @@
 /*****************************************
- *                   六足控制算法四脚步态规划程序          *
- *                   Copyright (c) V5_Lab, 2018                  *
- *                   Author:                  Kingsley                  *
- *                   Version number:  0.00                         *
- *                   Date:                                                      *
+ *     六足控制算法四脚步态规划程序        *
+ *     Copyright (c) V5_Lab, 2018        *
+ *     Author:       Kingsley            *
+ *     Version number:  0.00             *
+ *     Date:                             *
  * ***************************************/
 
 #include "gait.h"
