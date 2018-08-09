@@ -1,0 +1,2 @@
+my_hexapod_control
+-DCATKIN_DEVEL_PREFIX=/home/sun/hexapod_4_ws/devel -DCMAKE_INSTALL_PREFIX=/home/sun/hexapod_4_ws/install -G Unix Makefiles
