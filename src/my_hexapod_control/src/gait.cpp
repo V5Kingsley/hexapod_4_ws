@@ -1,5 +1,5 @@
 /*****************************************
- *     六足控制算法四脚步态规划程序        *
+ *     六足控制算法通用步态规划程序          *
  *     Copyright (c) V5_Lab, 2018        *
  *     Author:       Kingsley            *
  *     Version number:  0.00             *
@@ -18,21 +18,43 @@ Gait::Gait( void )
   ros::param::get("STEP_GAIT_ORDER_1", STEP_GAIT_ORDER_1);
   ros::param::get("STEP_GAIT_ORDER_2", STEP_GAIT_ORDER_2);
   ros::param::get("STEP_GAIT_ORDER_3", STEP_GAIT_ORDER_3);
+  ros::param::get("THREE_GAIT_ORDER_1", THREE_GAIT_ORDER_1);
+  ros::param::get("THREE_GAIT_ORDER_2", THREE_GAIT_ORDER_2);
+  ros::param::get("FIVE_GAIT_ORDER_1", FIVE_GAIT_ORDER_1);
+  ros::param::get("FIVE_GAIT_ORDER_2", FIVE_GAIT_ORDER_2);
+  ros::param::get("FIVE_GAIT_ORDER_3", FIVE_GAIT_ORDER_3);
+  ros::param::get("FIVE_GAIT_ORDER_4", FIVE_GAIT_ORDER_4);
+  ros::param::get("FIVE_GAIT_ORDER_5", FIVE_GAIT_ORDER_5);
+  ros::param::get("FIVE_GAIT_ORDER_6", FIVE_GAIT_ORDER_6);
   ros::param::get("LINEAR_X_MAX", linear_x_max);
   ros::param::get("LINEAR_Y_MAX", linear_y_max);
   ros::param::get("ANGULAR_Z_MAX", angular_z_max);
+  ros::param::get("GAIT_NUM", GAIT_NUM);
   STEP_GAIT_ORDER.resize(3);
   STEP_GAIT_ORDER[0] = STEP_GAIT_ORDER_1;
   STEP_GAIT_ORDER[1] = STEP_GAIT_ORDER_2;
   STEP_GAIT_ORDER[2] = STEP_GAIT_ORDER_3;
   ONE_STEP_LENGTH = ONE_STEP_LENGTH_ORIGIN;
-  
+  THREE_GAIT_ORDER.resize(2);
+  THREE_GAIT_ORDER[0] = THREE_GAIT_ORDER_1;
+  THREE_GAIT_ORDER[1] = THREE_GAIT_ORDER_2;
+  FIVE_GAIT_ORDER.resize(6);
+  FIVE_GAIT_ORDER[0] = FIVE_GAIT_ORDER_1;
+  FIVE_GAIT_ORDER[1] = FIVE_GAIT_ORDER_2;
+  FIVE_GAIT_ORDER[2] = FIVE_GAIT_ORDER_3;
+  FIVE_GAIT_ORDER[3] = FIVE_GAIT_ORDER_4;
+  FIVE_GAIT_ORDER[4] = FIVE_GAIT_ORDER_5;
+  FIVE_GAIT_ORDER[5] = FIVE_GAIT_ORDER_6;
   cycle_period_=1;
   gait_order = 0;
   leg_step[6]={0};
+  start_cycle = 1;
   stop_cycle = 0;
   stop_active = 0;
   lift_drop_length = 0.3;
+  STEP_NUM = NUMBER_OF_LEGS/(NUMBER_OF_LEGS-GAIT_NUM);
+  //swing_step = float(GAIT_NUM)/float(NUMBER_OF_LEGS);
+  //support_step = 1- swing_step;
 }
 
 //每条摆动腿和支撑腿一个周期内的步幅控制
@@ -45,7 +67,7 @@ void Gait::cyclePeriod( const geometry_msgs::Pose2D &base, hexapod_msgs::FeetPos
   int step_cout;
   if(gait_order == 0)
   {
-    step_cout = 2;
+    step_cout = STEP_NUM-1;
   }
   else
   {
@@ -78,21 +100,21 @@ void Gait::cyclePeriod( const geometry_msgs::Pose2D &base, hexapod_msgs::FeetPos
       int step_period = cycle_period_-step_cout*ONE_STEP_LENGTH;
       if(step_period <= LIFT_LENGTH)
       {
-	period_distance = leg_step[leg_index] - 2.0/3.0;
+	period_distance = leg_step[leg_index] - swing_step;
 	period_height = - 0.5 * cos( M_PI * step_period / LIFT_LENGTH) + 0.5;
-	ROS_INFO("lift, step_period: %d", step_period);
+	//ROS_INFO("lift, step_period: %d", step_period);
       }
       else if(step_period >= (ONE_STEP_LENGTH-DROP_LENGTH))
       {
 	period_distance = leg_step[leg_index];
 	period_height = 0.5 * cos( M_PI * (step_period - (LIFT_LENGTH+MOVE_LENGTH)) / DROP_LENGTH ) + 0.5;
-	ROS_INFO("drop, step_period: %d", step_period);
+	//ROS_INFO("drop, step_period: %d", step_period);
       }
       else
       {
-	period_distance = - (1.0/3.0) * cos( M_PI * (step_period-LIFT_LENGTH) / MOVE_LENGTH ) + (leg_step[leg_index]-2.0/3.0+1.0/3.0);
+	period_distance = - swing_step/2.0 * cos( M_PI * (step_period-LIFT_LENGTH) / MOVE_LENGTH ) + (leg_step[leg_index]-swing_step+swing_step/2.0);
 	period_height = 1;
-	ROS_INFO("move, step_period: %d, period_distance: %f", step_period, period_distance);
+	//ROS_INFO("move, step_period: %d, period_distance: %f", step_period, period_distance);
       }
       feet->foot[leg_index].position.x = base.x * period_distance;
       feet->foot[leg_index].position.y = base.y * period_distance;
@@ -106,7 +128,7 @@ void Gait::cyclePeriod( const geometry_msgs::Pose2D &base, hexapod_msgs::FeetPos
       int step_period = cycle_period_-step_cout*ONE_STEP_LENGTH;
       if(step_period <= LIFT_LENGTH)
       {
-	period_distance = leg_step[leg_index] + 1.0/3.0;
+	period_distance = leg_step[leg_index] + support_step;
       }
       else if(step_period >= (ONE_STEP_LENGTH-DROP_LENGTH))
       {
@@ -114,7 +136,7 @@ void Gait::cyclePeriod( const geometry_msgs::Pose2D &base, hexapod_msgs::FeetPos
       }
       else
       {
-	period_distance = 1.0/6.0 * cos(M_PI * (step_period-LIFT_LENGTH) / MOVE_LENGTH) + (1.0/6.0+leg_step[leg_index]);
+	period_distance = support_step/2.0 * cos(M_PI * (step_period-LIFT_LENGTH) / MOVE_LENGTH) + (support_step/2.0+leg_step[leg_index]);
       }  
       feet->foot[leg_index].position.x = base.x * period_distance;
       feet->foot[leg_index].position.y = base.y * period_distance;
@@ -123,9 +145,26 @@ void Gait::cyclePeriod( const geometry_msgs::Pose2D &base, hexapod_msgs::FeetPos
     }
   }
   
-  if(stop_cycle == 1 && cycle_period_ == CYCLE_LENGTH)
+
+  if(GAIT_NUM==3)
   {
-    stop_cycle = 0;
+    if(stop_cycle == 1 && support_step==float(GAIT_NUM)/float(NUMBER_OF_LEGS) && (cycle_period_==ONE_STEP_LENGTH||cycle_period_==CYCLE_LENGTH) )
+    {
+      stop_cycle = 0;
+      cycle_period_=0;
+    }
+  }
+  else
+  {
+    if(stop_cycle==1 && cycle_period_==CYCLE_LENGTH)
+    {
+      stop_cycle = 0;
+    }
+  }
+  
+  if(start_cycle == 1 && cycle_period_== ONE_STEP_LENGTH)
+  {
+    start_cycle = 0;
   }
   
 
@@ -151,6 +190,12 @@ void Gait::gaitCycle( const geometry_msgs::Twist &cmd_vel, hexapod_msgs::FeetPos
       base.y = cmd_vel.linear.y ;
       base.theta = cmd_vel.angular.z ;
     }
+
+    if (cmd_vel.linear.x == 0 && cmd_vel.linear.y == 0 && cmd_vel.angular.z == 0)
+  {
+  //  start_cycle = 1;
+  }
+ 
     
     //周期调整
   LIFT_LENGTH = lift_drop_length * ONE_STEP_LENGTH_ORIGIN;
@@ -161,13 +206,28 @@ void Gait::gaitCycle( const geometry_msgs::Twist &cmd_vel, hexapod_msgs::FeetPos
   double max_cycle = (x_cycle>y_cycle?x_cycle:y_cycle) > z_cycle ? (x_cycle>y_cycle?x_cycle:y_cycle) : z_cycle;
   MOVE_LENGTH = (1-2*lift_drop_length) * ONE_STEP_LENGTH_ORIGIN * max_cycle;
   ONE_STEP_LENGTH = LIFT_LENGTH + MOVE_LENGTH + DROP_LENGTH;
-  CYCLE_LENGTH = ONE_STEP_LENGTH * 3;
+  CYCLE_LENGTH = ONE_STEP_LENGTH * STEP_NUM;
   
   smooth_base_.x = base.x;
   smooth_base_.y = base.y;
   smooth_base_.theta = base.theta;
   
+  if(GAIT_NUM == 3)
+  {
+    if(smooth_base_.x==0 && smooth_base_.y==0 && smooth_base_.theta==0)
+    {
+     for(int leg_index = 0; leg_index < NUMBER_OF_LEGS; leg_index++)
+     {
+       leg_step[leg_index] = 0;
+    }
+     gait_order = 0;
+     start_cycle = 1;
+//  ROS_INFO("in, cycle_period_: %d, gait_order: %d", cycle_period_, gait_order);
+    }
   }
+  
+  }
+  
 
     
     // Check to see if we are actually travelling
@@ -197,25 +257,59 @@ void Gait::gaitCycle( const geometry_msgs::Twist &cmd_vel, hexapod_msgs::FeetPos
     /*每个抬腿周期（1/3周期）后更换摆动腿组和支撑腿组*/
     if(cycle_period_ == (gait_order*ONE_STEP_LENGTH+1))
     {
-      MOVE_GAIT_ORDER = STEP_GAIT_ORDER[gait_order];
+      if(GAIT_NUM == 4)
+      {
+	MOVE_GAIT_ORDER = STEP_GAIT_ORDER[gait_order];
+      }
+      if(GAIT_NUM == 3)
+      {
+	MOVE_GAIT_ORDER = THREE_GAIT_ORDER[gait_order];
+      }
+      if(GAIT_NUM == 5)
+      {
+	MOVE_GAIT_ORDER = FIVE_GAIT_ORDER[gait_order];
+      }
       gait_order++;
       
-      /*摆动腿和支撑腿足端轨迹在下一个1/3周期的变换，摆动腿增加2/3歩幅，支撑腿减少1/3歩幅*/
+      /*摆动腿和支撑腿足端轨迹在下一个周期的变换，摆动腿增加歩幅，支撑腿减少歩幅*/
       for(int leg_index = 0; leg_index < NUMBER_OF_LEGS; leg_index++)
       {
 	if( MOVE_GAIT_ORDER[leg_index]==1 )
 	{
-	  leg_step[leg_index] = leg_step[leg_index] + 2.0/3.0;
+	  if(GAIT_NUM==3 && stop_cycle==0 && start_cycle==0)
+	  {
+	    leg_step[leg_index] = leg_step[leg_index] + 1;
+	    swing_step = 1.0;
+	    support_step = 1.0;
+	  }
+	  else
+	  {
+	    swing_step = float(GAIT_NUM)/float(NUMBER_OF_LEGS);
+            support_step = 1- swing_step;
+	    leg_step[leg_index] = leg_step[leg_index] + swing_step;
+	  }
 	}
 	if ( MOVE_GAIT_ORDER[leg_index]==0 )
 	{
-	  leg_step[leg_index] = leg_step[leg_index] - 1.0/3.0;
+	  if(GAIT_NUM==3 && stop_cycle==0 && start_cycle==0)
+	  {
+	    leg_step[leg_index] = leg_step[leg_index] - 1;
+	    swing_step = 1.0;
+	    support_step = 1.0;
+	  }
+	  else
+	  {
+	    swing_step = float(GAIT_NUM)/float(NUMBER_OF_LEGS);
+            support_step = 1- swing_step;
+	    leg_step[leg_index] = leg_step[leg_index] - support_step;
+	  }
 	}
+//	ROS_INFO("leg_index: %d, leg_step: %f", leg_index, leg_step[leg_index]);
       }
 
     }
     
-    if(gait_order == 3)
+    if(gait_order == STEP_NUM)
     {
       gait_order = 0;
     }

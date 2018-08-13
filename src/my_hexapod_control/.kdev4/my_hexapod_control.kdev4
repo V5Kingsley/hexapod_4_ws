@@ -34,3 +34,6 @@ Project Target=my_hexapod_control,odom_tf
 Use External Terminal=false
 Working Directory=
 isExecutable=true
+
+[Project]
+VersionControlSupport=kdevgit
