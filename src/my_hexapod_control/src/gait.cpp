@@ -29,7 +29,10 @@ Gait::Gait( void )
   ros::param::get("LINEAR_X_MAX", linear_x_max);
   ros::param::get("LINEAR_Y_MAX", linear_y_max);
   ros::param::get("ANGULAR_Z_MAX", angular_z_max);
-  ros::param::get("GAIT_NUM", GAIT_NUM);
+  smooth_base_.x = smooth_base_.y = smooth_base_.theta = 0;
+  base.x = base.y = base.theta = 0;
+ // ros::param::get("GAIT_NUM", GAIT_NUM);
+  gn.param<int>("GAIT_NUM", GAIT_NUM, 3);
   STEP_GAIT_ORDER.resize(3);
   STEP_GAIT_ORDER[0] = STEP_GAIT_ORDER_1;
   STEP_GAIT_ORDER[1] = STEP_GAIT_ORDER_2;
@@ -53,17 +56,12 @@ Gait::Gait( void )
   stop_active = 0;
   lift_drop_length = 0.3;
   STEP_NUM = NUMBER_OF_LEGS/(NUMBER_OF_LEGS-GAIT_NUM);
-  //swing_step = float(GAIT_NUM)/float(NUMBER_OF_LEGS);
-  //support_step = 1- swing_step;
 }
 
 //每条摆动腿和支撑腿一个周期内的步幅控制
 void Gait::cyclePeriod( const geometry_msgs::Pose2D &base, hexapod_msgs::FeetPositions *feet )
 {
-//   double period_distance, period_height;
-//   period_distance = -cos( cycle_period_*PI/CYCLE_LENGTH );  //每条腿PI/CYCLE_LENGTH时间的步幅
-//   period_height = sin( cycle_period_*PI/CYCLE_LENGTH ); //摆动腿PI/CYCLE_LENGTH时间抬起的高度
-  
+
   int step_cout;
   if(gait_order == 0)
   {
@@ -73,22 +71,6 @@ void Gait::cyclePeriod( const geometry_msgs::Pose2D &base, hexapod_msgs::FeetPos
   {
     step_cout = gait_order - 1;
   }
-  if (MOVE_GAIT_ORDER.empty())
-  {
-    ROS_FATAL("Please set the speed to 0 and restart.");
-    ros::shutdown();
-    return;
-  }
-  
-//   std::cout<<step_cout<<" : ";
-//   std::vector<int>::iterator pd;
-//   for(pd = MOVE_GAIT_ORDER.begin(); pd != MOVE_GAIT_ORDER.end(); pd++)
-//   {
-//     std::cout<<*pd<<" ";
-//   }
-//   std::cout<<std::endl;
-  bool step_change = std::abs(step_cout - step_cout_last_time);
-  step_cout_last_time = step_cout;
 
   //摆动腿和支撑腿歩幅控制
   for( int leg_index=0; leg_index<NUMBER_OF_LEGS; leg_index++ )
@@ -145,44 +127,77 @@ void Gait::cyclePeriod( const geometry_msgs::Pose2D &base, hexapod_msgs::FeetPos
     }
   }
   
-
+  //ROS_INFO("start_cycle: %d", start_cycle);
+  
+  //三角步态时，只需二分之一周期，即一个抬腿周期后即可停止；当处于步态更换停止周期时，当前不能属于开始周期。停止周期完成后，标识位复位，步态更新，每次停止复位后开始周期标志符都赋1
   if(GAIT_NUM==3)
   {
-    if(stop_cycle == 1 && support_step==float(GAIT_NUM)/float(NUMBER_OF_LEGS) && (cycle_period_==ONE_STEP_LENGTH||cycle_period_==CYCLE_LENGTH) )
+    if(stop_cycle == 1 && support_step==float(GAIT_NUM)/float(NUMBER_OF_LEGS) && (cycle_period_==ONE_STEP_LENGTH||cycle_period_==CYCLE_LENGTH) && start_cycle == 0)
     {
       stop_cycle = 0;
       cycle_period_=0;
+      gait_order = 0;
+      start_cycle = 1;
+      gn.param<int>("GAIT_NUM", GAIT_NUM, 3);
+      STEP_NUM = NUMBER_OF_LEGS/(NUMBER_OF_LEGS-GAIT_NUM);
+      CYCLE_LENGTH = ONE_STEP_LENGTH * STEP_NUM;
     }
   }
+  //不是三角步态时
   else
   {
     if(stop_cycle==1 && cycle_period_==CYCLE_LENGTH)
     {
+      start_cycle = 1;
       stop_cycle = 0;
+      gn.param<int>("GAIT_NUM", GAIT_NUM, 3);
+      STEP_NUM = NUMBER_OF_LEGS/(NUMBER_OF_LEGS-GAIT_NUM);
+      CYCLE_LENGTH = ONE_STEP_LENGTH * STEP_NUM;
+      gait_order = 0;
+      cycle_period_ = 0;
     }
   }
   
+  ///开始周期完成，开始周期只针对三角步态
   if(start_cycle == 1 && cycle_period_== ONE_STEP_LENGTH)
   {
     start_cycle = 0;
   }
   
-
 }
  
 //摆动腿和支撑腿切换
 void Gait::gaitCycle( const geometry_msgs::Twist &cmd_vel, hexapod_msgs::FeetPositions *feet )
 {
+/*****从参数服务器获取步态*****/
+  int gait_num; 
+  gn.param<int>("GAIT_NUM", gait_num, 3);
   
-  if( (base.x - cmd_vel.linear.x) != 0 || (base.y - cmd_vel.linear.y) != 0 || (base.theta - cmd_vel.angular.z) != 0)
+  //当机器人处于静止状态时，直接更改步态
+  if(smooth_base_.x == 0 && smooth_base_.y == 0 && smooth_base_.theta == 0) 
   {
-    
+    GAIT_NUM = gait_num;
+  }
+  //否则需要机器人走完停止周期时才更改步态，停止周期标志位赋1
+  else  
+  {
+    if((gait_num-GAIT_NUM)!=0)
+    {
+      stop_cycle = 1;
+    }
+  }
+
+  /********机器人速度改变时*******/
+  if( (base.x - cmd_vel.linear.x) != 0 || (base.y - cmd_vel.linear.y) != 0 || (base.theta - cmd_vel.angular.z) != 0)
+  { 
+    //当发布的速度为0时，停止复位启动，仅进入一次
     if(cmd_vel.linear.x == 0 && cmd_vel.linear.y == 0 && cmd_vel.angular.z == 0 && stop_active == 0)
     {
       stop_cycle = 1;
       stop_active = 1;
     }
     
+    //当不是处于停止复位周期时，将速度赋给机器人
     if(stop_cycle == 0)
     {
       stop_active = 0;
@@ -191,12 +206,6 @@ void Gait::gaitCycle( const geometry_msgs::Twist &cmd_vel, hexapod_msgs::FeetPos
       base.theta = cmd_vel.angular.z ;
     }
 
-    if (cmd_vel.linear.x == 0 && cmd_vel.linear.y == 0 && cmd_vel.angular.z == 0)
-  {
-  //  start_cycle = 1;
-  }
- 
-    
     //周期调整
   LIFT_LENGTH = lift_drop_length * ONE_STEP_LENGTH_ORIGIN;
   DROP_LENGTH = lift_drop_length * ONE_STEP_LENGTH_ORIGIN;
@@ -206,29 +215,15 @@ void Gait::gaitCycle( const geometry_msgs::Twist &cmd_vel, hexapod_msgs::FeetPos
   double max_cycle = (x_cycle>y_cycle?x_cycle:y_cycle) > z_cycle ? (x_cycle>y_cycle?x_cycle:y_cycle) : z_cycle;
   MOVE_LENGTH = (1-2*lift_drop_length) * ONE_STEP_LENGTH_ORIGIN * max_cycle;
   ONE_STEP_LENGTH = LIFT_LENGTH + MOVE_LENGTH + DROP_LENGTH;
+  STEP_NUM = NUMBER_OF_LEGS/(NUMBER_OF_LEGS-GAIT_NUM);
   CYCLE_LENGTH = ONE_STEP_LENGTH * STEP_NUM;
   
   smooth_base_.x = base.x;
   smooth_base_.y = base.y;
   smooth_base_.theta = base.theta;
   
-  if(GAIT_NUM == 3)
-  {
-    if(smooth_base_.x==0 && smooth_base_.y==0 && smooth_base_.theta==0)
-    {
-     for(int leg_index = 0; leg_index < NUMBER_OF_LEGS; leg_index++)
-     {
-       leg_step[leg_index] = 0;
-    }
-     gait_order = 0;
-     start_cycle = 1;
-//  ROS_INFO("in, cycle_period_: %d, gait_order: %d", cycle_period_, gait_order);
-    }
   }
   
-  }
-  
-
     
     // Check to see if we are actually travelling
     if( ( std::abs( smooth_base_.y ) > 0.001 ) || // 1 mm
@@ -241,22 +236,15 @@ void Gait::gaitCycle( const geometry_msgs::Twist &cmd_vel, hexapod_msgs::FeetPos
     {
         is_travelling_ = false;  
     }
+    
+    
     if ( is_travelling_ == true )
     {
-      //给下一个period/CYCLE_LENGTH足端歩幅
-      cyclePeriod( smooth_base_, feet);
-      cycle_period_++;
-    }
-    
-    //一个周期结束后从1计数
-    if( cycle_period_==(CYCLE_LENGTH+1) )
-    {
-      cycle_period_=1;
-    } 
-    
-    /*每个抬腿周期（1/3周期）后更换摆动腿组和支撑腿组*/
+      /****************************************************/
+      /*每个抬腿周期后更换摆动腿组和支撑腿组*/
+    //  ROS_INFO("cycle_period_: %d, gait_order: %d", cycle_period_, gait_order);
     if(cycle_period_ == (gait_order*ONE_STEP_LENGTH+1))
-    {
+    {   
       if(GAIT_NUM == 4)
       {
 	MOVE_GAIT_ORDER = STEP_GAIT_ORDER[gait_order];
@@ -272,11 +260,15 @@ void Gait::gaitCycle( const geometry_msgs::Twist &cmd_vel, hexapod_msgs::FeetPos
       gait_order++;
       
       /*摆动腿和支撑腿足端轨迹在下一个周期的变换，摆动腿增加歩幅，支撑腿减少歩幅*/
+      /*摆动腿每次在变换周期时，歩幅增加float(GAIT_NUM)/float(NUMBER_OF_LEGS)，支撑腿歩幅减少1- swing_step*/
+      /*leg_step[]记录每条腿周期执行完后的足端轨迹*/
+      /*三角步态时，开始周期和停止周期与其他步态一致，其他周期不一致，歩幅增加和减少的数值为1*/
+      
       for(int leg_index = 0; leg_index < NUMBER_OF_LEGS; leg_index++)
       {
 	if( MOVE_GAIT_ORDER[leg_index]==1 )
 	{
-	  if(GAIT_NUM==3 && stop_cycle==0 && start_cycle==0)
+	  if(GAIT_NUM==3 && stop_cycle==0 && start_cycle==0)  
 	  {
 	    leg_step[leg_index] = leg_step[leg_index] + 1;
 	    swing_step = 1.0;
@@ -313,5 +305,16 @@ void Gait::gaitCycle( const geometry_msgs::Twist &cmd_vel, hexapod_msgs::FeetPos
     {
       gait_order = 0;
     }
+      /********************************************************************/
+      //给下一个period/CYCLE_LENGTH足端歩幅
+      cyclePeriod( smooth_base_, feet);
+      cycle_period_++;
+    }
+    
+    //一个周期结束后从1计数
+    if( cycle_period_==(CYCLE_LENGTH+1) )
+    {
+      cycle_period_=1;
+    } 
     
 }

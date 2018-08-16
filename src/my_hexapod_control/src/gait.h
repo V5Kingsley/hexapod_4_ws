@@ -7,6 +7,7 @@
 #include <hexapod_msgs/FeetPositions.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
+#include "control.h"
  
 class Gait
 {
@@ -16,6 +17,7 @@ public:
   int cycle_period_;
   std::vector<int> cycle_leg_number_;
   bool start_cycle;
+  bool is_travelling_ ;
 private:
   void cyclePeriod( const geometry_msgs::Pose2D &base, hexapod_msgs::FeetPositions *feet);  //每条摆动腿和支撑腿一个周期内的步幅控制
   geometry_msgs::Pose2D smooth_base_;
@@ -23,7 +25,6 @@ private:
   int CYCLE_LENGTH;
   int NUMBER_OF_LEGS;
   double LEG_LIFT_HEIGHT;
-  bool is_travelling_ ;
   geometry_msgs::Pose2D base;
   int ONE_STEP_LENGTH;
   int ONE_STEP_LENGTH_ORIGIN;
@@ -60,6 +61,7 @@ private:
   int STEP_NUM;
   double support_step;
   double swing_step;
+  ros::NodeHandle gn;
 }; 
 
 #endif

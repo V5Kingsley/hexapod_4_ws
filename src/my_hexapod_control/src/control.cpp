@@ -64,8 +64,13 @@ void Control::robotInit()
 }
  
 
-void Control::publishJointStates( const hexapod_msgs::LegsJoints &legs, int &cycle_period_, std::vector<int> &cycle_leg_number_, const hexapod_msgs::FeetPositions *feet )
+void Control::publishJointStates( const hexapod_msgs::LegsJoints &legs, int &cycle_period_, std::vector<int> &cycle_leg_number_, const hexapod_msgs::FeetPositions *feet, const bool& is_travelling)
 {
+  if(!is_travelling)
+  {
+    return;
+  }
+  
       for ( int leg_index=0; leg_index<NUMBER_OF_LEGS; leg_index++ )
   {
     leg_roll[leg_index].data = legs.leg[leg_index].coxa;

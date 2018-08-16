@@ -65,6 +65,8 @@ geometry_msgs/Pose2D.h
 -
 geometry_msgs/Twist.h
 -
+control.h
+/home/sun/hexapod_4_ws/src/my_hexapod_control/src/control.h
 
 /home/sun/hexapod_4_ws/src/my_hexapod_control/src/ik.h
 cmath

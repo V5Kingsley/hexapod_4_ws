@@ -96,8 +96,8 @@ JOINT_NAME: [
 
 ONE_STEP_LENGTH: 50
 
-MOVE_GAIT_ORDER: [0, 0, 0, 0, 0, 0]
 
+#四脚步态顺序
 STEP_GAIT_ORDER_1: [1, 0, 0, 1, 0, 0]
 STEP_GAIT_ORDER_2: [0, 0, 1, 0, 0, 1]
 STEP_GAIT_ORDER_3: [0, 1, 0, 0, 1, 0]
@@ -107,11 +107,13 @@ LINEAR_Y_MAX: 0.1
 ANGULAR_Z_MAX: 0.3
 
 
-GAIT_NUM: 4
+#GAIT_NUM: 4
 
+#三角步态顺序
 THREE_GAIT_ORDER_1: [1, 0, 1, 0, 1, 0]
 THREE_GAIT_ORDER_2: [0, 1, 0, 1, 0, 1]
 
+#五脚步态顺序
 FIVE_GAIT_ORDER_1: [1, 0, 0, 0, 0, 0]
 FIVE_GAIT_ORDER_2: [0, 1, 0, 0, 0, 0]
 FIVE_GAIT_ORDER_3: [0, 0, 1, 0, 0, 0]
