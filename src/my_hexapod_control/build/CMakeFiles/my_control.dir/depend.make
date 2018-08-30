@@ -87,6 +87,7 @@ CMakeFiles/my_control.dir/src/control.cpp.o: /opt/ros/indigo/include/sensor_msgs
 CMakeFiles/my_control.dir/src/control.cpp.o: /opt/ros/indigo/include/std_msgs/Bool.h
 CMakeFiles/my_control.dir/src/control.cpp.o: /opt/ros/indigo/include/std_msgs/Float64.h
 CMakeFiles/my_control.dir/src/control.cpp.o: /opt/ros/indigo/include/std_msgs/Header.h
+CMakeFiles/my_control.dir/src/control.cpp.o: /opt/ros/indigo/include/std_msgs/Int16.h
 CMakeFiles/my_control.dir/src/control.cpp.o: /opt/ros/indigo/include/std_srvs/Empty.h
 CMakeFiles/my_control.dir/src/control.cpp.o: /opt/ros/indigo/include/std_srvs/EmptyRequest.h
 CMakeFiles/my_control.dir/src/control.cpp.o: /opt/ros/indigo/include/std_srvs/EmptyResponse.h

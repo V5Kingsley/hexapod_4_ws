@@ -11,6 +11,8 @@ Control::Control( void )
     // Topics we are subscribing
     cmd_vel_sub_ = nh_.subscribe<geometry_msgs::Twist>( "/cmd_vel", 1, &Control::cmd_velCallback, this );
     
+    gait_num_sub = nh_.subscribe<std_msgs::Int16>("/select_gait", 1, &Control::gait_num_cb, this);
+    
     //发布的话题
     boost::format roll; 
     boost::format pitch1;
@@ -166,6 +168,19 @@ void Control::partitionCmd_vel( geometry_msgs::Twist *cmd_vel )
     double delta_x = ( cmd_vel_incoming_.linear.x * cos( delta_th ) - cmd_vel_incoming_.linear.y * sin( delta_th ) ) * dt;
     double delta_y = ( cmd_vel_incoming_.linear.x * sin( delta_th ) + cmd_vel_incoming_.linear.y * cos( delta_th ) ) * dt;
     cmd_vel->linear.x = delta_x;
-    cmd_vel->linear.y = delta_y;
+    cmd_vel->linear.y = delta_y;c
     cmd_vel->angular.z = delta_th;
+}
+
+
+void Control::gait_num_cb(const std_msgs::Int16ConstPtr& gait_num_msg)
+{
+  if(gait_num_msg->data==3 ||gait_num_msg->data==4 || gait_num_msg->data==5 )
+  {
+    ros::param::set("GAIT_NUM", gait_num_msg->data);
+  }
+  else
+  {
+    ROS_FATAL("Gait mode input false. Gait mode should be 3, 4 or 5");
+  }
 }

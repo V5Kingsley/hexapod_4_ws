@@ -88,6 +88,7 @@ my_hexapod_control/CMakeFiles/my_gait.dir/src/gait.cpp.o: /opt/ros/indigo/includ
 my_hexapod_control/CMakeFiles/my_gait.dir/src/gait.cpp.o: /opt/ros/indigo/include/std_msgs/Bool.h
 my_hexapod_control/CMakeFiles/my_gait.dir/src/gait.cpp.o: /opt/ros/indigo/include/std_msgs/Float64.h
 my_hexapod_control/CMakeFiles/my_gait.dir/src/gait.cpp.o: /opt/ros/indigo/include/std_msgs/Header.h
+my_hexapod_control/CMakeFiles/my_gait.dir/src/gait.cpp.o: /opt/ros/indigo/include/std_msgs/Int16.h
 my_hexapod_control/CMakeFiles/my_gait.dir/src/gait.cpp.o: /opt/ros/indigo/include/std_srvs/Empty.h
 my_hexapod_control/CMakeFiles/my_gait.dir/src/gait.cpp.o: /opt/ros/indigo/include/std_srvs/EmptyRequest.h
 my_hexapod_control/CMakeFiles/my_gait.dir/src/gait.cpp.o: /opt/ros/indigo/include/std_srvs/EmptyResponse.h

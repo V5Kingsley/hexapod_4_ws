@@ -23,6 +23,7 @@
 #include <gazebo_msgs/ApplyBodyWrench.h>
 #include <string>
 #include <boost/format.hpp>
+#include <std_msgs/Int16.h>
 
 class Control
 {
@@ -68,6 +69,9 @@ private:
   gazebo_msgs::ApplyBodyWrench srv;
   
   ros::Publisher feet_position;
+  
+  ros::Subscriber gait_num_sub;
+  void gait_num_cb(const std_msgs::Int16ConstPtr &gait_num_msg);
   
 };
 

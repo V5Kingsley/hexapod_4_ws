@@ -10,9 +10,11 @@ ProjectRootRelative=./
 Build Directory Path=file:///home/sun/hexapod_4_ws/src/my_hexapod_control/build
 Build Type=Debug
 CMake Binary=file:///usr/bin/cmake
+CMake Executable=/usr/bin/cmake
 Environment Profile=
 Extra Arguments=-DCATKIN_DEVEL_PREFIX=../devel -DCMAKE_INSTALL_PREFIX=../install\s
 Install Directory=file:///home/sun/hexapod_4_ws/src/my_hexapod_control/install
+Runtime=Host System
 
 [Launch]
 Launch Configurations=Launch Configuration 0

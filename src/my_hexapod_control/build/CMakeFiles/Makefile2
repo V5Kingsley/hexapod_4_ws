@@ -499,8 +499,8 @@ clean: CMakeFiles/my_gait.dir/clean
 
 # All Build rule for target.
 CMakeFiles/my_hexapod_controller.dir/all: CMakeFiles/my_control.dir/all
-CMakeFiles/my_hexapod_controller.dir/all: CMakeFiles/my_ik.dir/all
 CMakeFiles/my_hexapod_controller.dir/all: CMakeFiles/my_gait.dir/all
+CMakeFiles/my_hexapod_controller.dir/all: CMakeFiles/my_ik.dir/all
 	$(MAKE) -f CMakeFiles/my_hexapod_controller.dir/build.make CMakeFiles/my_hexapod_controller.dir/depend
 	$(MAKE) -f CMakeFiles/my_hexapod_controller.dir/build.make CMakeFiles/my_hexapod_controller.dir/build
 	$(CMAKE_COMMAND) -E cmake_progress_report /home/sun/hexapod_4_ws/src/my_hexapod_control/build/CMakeFiles  5
